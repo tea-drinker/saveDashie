@@ -22,8 +22,8 @@ def repaint(discord_list, place):
           del discord_list[(x, y)]
           sleep(660)
 
-def monitor_dashie():
-    ws = websocket.create_connection(user_details.url)
+def monitor_dashie(url):
+    ws = websocket.create_connection(url)
     while 1:
        payload = ws.recv()
 
@@ -83,5 +83,5 @@ if __name__ == "__main__":
     p = Process(target=repaint, args=(discord_list,place,))
     p.start()
 
-    monitor_dashie()
+    monitor_dashie(args.url)
 
