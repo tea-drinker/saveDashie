@@ -3,7 +3,7 @@ from time import sleep
 import dashie
 import websocket
 import json
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, freeze_support
 
 #Put your credentials in userDetails.py so changes to this file can be safely pushed.
 import user_details
@@ -53,6 +53,8 @@ def monitor_dashie():
 
 
 if __name__ == "__main__":
+    freeze_support()
+
     discord_list = Manager().dict()
     p = Process(target=repaint, args=(discord_list,))
     p.start()
