@@ -5,10 +5,7 @@ import websocket
 import json
 from multiprocessing import Process, Manager, freeze_support
 
-#Put your credentials in userDetails.py so changes to this file can be safely pushed.
-import user_details
-
-def repaint(discord_list, p):
+def repaint(discord_list, place):
    while 1:
       try:
           keys = discord_list.keys()
@@ -21,7 +18,7 @@ def repaint(discord_list, p):
       else:
           (x, y) = discord_list.keys()[0]
           print("Painting", x, y, discord_list[(x, y)])
-          p.draw(x, y, discord_list[(x, y)])
+          place.draw(x, y, discord_list[(x, y)])
           del discord_list[(x, y)]
           sleep(660)
 
@@ -64,10 +61,26 @@ def monitor_dashie():
 if __name__ == "__main__":
     freeze_support()
 
-    place = Place.Place(user_details.user, user_details.passwd, greedy=False)
-    discord_list = Manager().dict()
+    import argparse
+    import getpass
 
-    p = Process(target=repaint, args=(discord_list,place))
+    parser = argparse.ArgumentParser(description='Save dashie on /r/places!')
+    parser.add_argument('--user', help='Reddit username')
+    parser.add_argument('--passwd', help='Reddit password')
+    parser.add_argument('--url', help='WebSockets URL')
+
+    args = parser.parse_args()
+    if args.user is None:
+        args.user = input("Enter Reddit Username: ")
+    if args.passwd is None:
+        args.passwd = getpass.getpass()
+    if args.url is None:
+        args.url = input("Enter WebSockets URL: ")
+
+    place = Place.Place(args.user, args.passwd, greedy=True)
+
+    discord_list = Manager().dict()
+    p = Process(target=repaint, args=(discord_list,place,))
     p.start()
 
     monitor_dashie()
