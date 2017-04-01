@@ -52,7 +52,7 @@ class Place(object):
         y: y-coordinates
         color: color to draw at coordinates
         """
-        self.last = self._draw(x,y)
+        self.last = self._draw(x,y,color)
         if self.greedy:
             while self.last.status_code == 429:
                 json = self.last.json()
@@ -63,7 +63,7 @@ class Place(object):
                 else:
                     sleep(1)
 
-                self.last = self._draw(x,y)
+                self.last = self._draw(x,y,color)
         return self.last.json()
 
 def randerase(place):
