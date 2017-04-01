@@ -18,9 +18,12 @@ def repaint(discord_list, place):
       else:
           (x, y) = discord_list.keys()[0]
           print("Painting", x, y, discord_list[(x, y)])
-          place.draw(x, y, discord_list[(x, y)])
-          del discord_list[(x, y)]
-          sleep(660)
+          response = place.draw(x, y, discord_list[(x, y)])
+          if "error" in response and response["error"] == 429:
+              print("Can't paint yet. Sleeping", response["wait_seconds"], "seconds")
+          else:
+              print("Cool down", response["wait_seconds"], "seconds")
+          sleep(response["wait_seconds"])
 
 def monitor_dashie(url):
     ws = websocket.create_connection(url)
@@ -77,7 +80,7 @@ if __name__ == "__main__":
     if args.url is None:
         args.url = input("Enter WebSockets URL: ")
 
-    place = Place.Place(args.user, args.passwd, greedy=True)
+    place = Place.Place(args.user, args.passwd, greedy=False)
 
     discord_list = Manager().dict()
     p = Process(target=repaint, args=(discord_list,place,))
