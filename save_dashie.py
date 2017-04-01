@@ -4,11 +4,9 @@ import dashie
 import websocket
 import json
 from multiprocessing import Process, Manager
-"""
-user = "<reddit username>"
-passwd = "<reddit password>"
-url = "<Websocket URL from the devtools panel>"
-"""
+
+#Put user details in a separate file to prevent accidentally pushing them to github
+import user_details
 
 def repaint(discord_list):
    p = Place.Place(user, passwd, greedy=False)
