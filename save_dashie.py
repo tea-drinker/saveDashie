@@ -8,10 +8,14 @@ from multiprocessing import Process, Manager, freeze_support
 #Put your credentials in userDetails.py so changes to this file can be safely pushed.
 import user_details
 
-def repaint(discord_list):
-   p = Place.Place(user_details.user, user_details.passwd, greedy=False)
+def repaint(discord_list, p):
    while 1:
-      print("test", discord_list.keys())
+      try:
+          keys = discord_list.keys()
+      except:
+          print("Error fetching keys. Quitting")
+          return
+
       if len(discord_list.keys()) == 0:
           sleep(10)
       else:
@@ -28,9 +32,14 @@ def monitor_dashie():
 
        if payload == b'\x03\xe8':
            print("server is overloaded. Quitting")
-           exit()
-       
-       payload = json.loads(payload)["payload"]
+           return
+       try: 
+           payload = json.loads(payload)["payload"]
+       except:
+           print("json parse error", payload)
+           sleep(10)
+           continue
+
        if "x" not in payload:
           continue
 
@@ -40,8 +49,8 @@ def monitor_dashie():
        real_y = payload["y"]
        dashie_y = real_y - dashie.top
 
-       if real_x >= dashie.left and real_x <= dashie.right and \
-          real_y >=dashie.top and real_y <= dashie.bottom:
+       if real_x >= dashie.left and real_x < dashie.right and \
+          real_y >=dashie.top and real_y < dashie.bottom:
           if payload["color"] != dashie.img[dashie_y][dashie_x]:
               print("Discord!", payload)
               discord_list[(real_x, real_y)] = dashie.img[dashie_y][dashie_x]
@@ -55,8 +64,11 @@ def monitor_dashie():
 if __name__ == "__main__":
     freeze_support()
 
+    place = Place.Place(user_details.user, user_details.passwd, greedy=False)
     discord_list = Manager().dict()
-    p = Process(target=repaint, args=(discord_list,))
+
+    p = Process(target=repaint, args=(discord_list,place))
     p.start()
 
     monitor_dashie()
+
