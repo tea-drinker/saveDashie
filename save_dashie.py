@@ -14,11 +14,13 @@ def repaint(discord_list, place):
           return
 
       if len(discord_list.keys()) == 0:
+          print("Nothing to fix!")
           sleep(10)
       else:
           (x, y) = discord_list.keys()[0]
           print("Painting", x, y, discord_list[(x, y)])
           response = place.draw(x, y, discord_list[(x, y)])
+          del discord_list[(x, y)]
 
           if "wait_seconds" not in response:
               print("Unknown response. Sleeping 10 seconds")
@@ -67,6 +69,7 @@ def monitor_dashie(url):
           elif (real_x, real_y) in discord_list:
               print("Pixel element harmonised", payload)
               del discord_list[(real_x, real_y)]
+              print(len(discord_list.keys()), "errors left to repair")
 
 
 
