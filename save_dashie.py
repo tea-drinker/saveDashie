@@ -18,23 +18,33 @@ def repaint(discord_list, place):
           sleep(10)
       else:
           (x, y) = discord_list.keys()[0]
-          print("Painting", x, y, discord_list[(x, y)])
-          response = place.draw(x, y, discord_list[(x, y)])
-          del discord_list[(x, y)]
 
-          if "wait_seconds" not in response:
-              print("Unknown response. Sleeping 10 seconds")
-              print(response)
-              response["wait_seconds"] = 10
-          elif "error" not in response:
-              print("Cool down", response["wait_seconds"], "seconds")
-          elif response["error"] == 429:
-              print("Can't paint yet. Sleeping", response["wait_seconds"], "seconds")
+          target_color = discord_list[(x, y)]
+          current_pixel_data = place.get(x, y)
+          verified_current_color = current_pixel_data["color"]
+
+          print("Painting", x, y, target_color)
+          if (verified_current_color == target_color):
+              print("Pixel already harmonised: ", current_pixel_data)
+              del discord_list[(x, y)]
+              sleep(1)
           else:
-              print("unknown error", response, " Sleeping 10 seconds")
-              response["wait_seconds"] = 10
+              response = place.draw(x, y, target_color)
+              del discord_list[(x, y)]
 
-          sleep(response["wait_seconds"])
+              if "wait_seconds" not in response:
+                  print("Unknown response. Sleeping 10 seconds")
+                  print(response)
+                  response["wait_seconds"] = 10
+              elif "error" not in response:
+                  print("Cool down", response["wait_seconds"], "seconds")
+              elif response["error"] == 429:
+                  print("Can't paint yet. Sleeping", response["wait_seconds"], "seconds")
+              else:
+                  print("unknown error", response, " Sleeping 10 seconds")
+                  response["wait_seconds"] = 10
+
+              sleep(response["wait_seconds"])
 
 def monitor_dashie(url):
     ws = websocket.create_connection(url)
@@ -44,7 +54,7 @@ def monitor_dashie(url):
        if payload == b'\x03\xe8':
            print("server is overloaded. Quitting")
            return
-       try: 
+       try:
            payload = json.loads(payload)["payload"]
        except:
            print("json parse error", payload)
@@ -99,4 +109,3 @@ if __name__ == "__main__":
     p.start()
 
     monitor_dashie(args.url)
-
