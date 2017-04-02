@@ -51,7 +51,7 @@ def monitor_dashie(url):
 
        if real_x >= dashie.left and real_x < dashie.right and \
           real_y >=dashie.top and real_y < dashie.bottom:
-          if payload["color"] != dashie.img[dashie_y][dashie_x]:
+          if payload["color"] != dashie.img[dashie_y][dashie_x] and dashie.img[dashie_y][dashie_x] != -1:
               print("Discord!", payload)
               discord_list[(real_x, real_y)] = dashie.img[dashie_y][dashie_x]
 
