@@ -18,10 +18,12 @@ colours = [(255, 255, 255)
          , (207, 110, 228)
          , (130, 0, 128)]
 
-img = Image.new("RGB", (42, 69))
+img = Image.new("RGB", (42, 69), (255, 255, 255))
 try:
     for y in range(69):
         for x in range(42):
+            if dashie.img[y][x] == -1:
+                continue
             img.putpixel((x, y), colours[dashie.img[y][x]])
 except:
     pass
