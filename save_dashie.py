@@ -19,10 +19,19 @@ def repaint(discord_list, place):
           (x, y) = discord_list.keys()[0]
           print("Painting", x, y, discord_list[(x, y)])
           response = place.draw(x, y, discord_list[(x, y)])
-          if "error" in response and response["error"] == 429:
+
+          if "wait_seconds" not in response:
+              print("Unknown response. Sleeping 10 seconds")
+              print(response)
+              response["wait_seconds"] = 10
+          elif "error" not in response:
+              print("Cool down", response["wait_seconds"], "seconds")
+          elif response["error"] == 429:
               print("Can't paint yet. Sleeping", response["wait_seconds"], "seconds")
           else:
-              print("Cool down", response["wait_seconds"], "seconds")
+              print("unknown error", response, " Sleeping 10 seconds")
+              response["wait_seconds"] = 10
+
           sleep(response["wait_seconds"])
 
 def monitor_dashie(url):
