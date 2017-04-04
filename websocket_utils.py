@@ -4,7 +4,7 @@ import json
 
 class websocket_dummy:
     def recv(self):
-        return '{"type":"place", "payload":{"x":1, "y":2, "color":0, "author":"tea-drinker"}}'
+        return '{"type":"place", "payload":{"x":770, "y":416, "color":0, "author":"tea-drinker"}}'
 
 def websocket_factory():
     return websocket_dummy()
