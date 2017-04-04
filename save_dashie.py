@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
+
 import Place
 from time import sleep
 import dashie
-import websocket
+import websocket_utils
 import json
 from multiprocessing import Process, Manager, freeze_support
 
@@ -46,42 +48,56 @@ def repaint(discord_list, place):
 
               sleep(response["wait_seconds"])
 
-def monitor_dashie(url):
-    ws = websocket.create_connection(url)
+def unpacker(next_step_function):
+    def process(message):
+        next_step_function(message["payload"])
+    return process
+
+def coarse_filter(next_step_function):
+    def process(payload):
+
+        x = payload["x"]
+        y = payload["y"]
+   
+        if x >= dashie.left and x < dashie.right and y >=dashie.top and y < dashie.bottom:
+           next_step_function(payload)
+    return process
+
+def fine_filter(next_step_function):
+    def process(payload):
+        dashie_x = payload["x"] - dashie.left
+        dashie_y = payload["y"] - dashie.top
+
+        if dashie.img[dashie_y][dashie_x] != -1:
+            next_step_function(payload)
+    return process
+
+def aggregator(discord_list):
+    def process(payload):
+        x = payload["x"]
+        y = payload["y"]
+        dashie_x = x - dashie.left
+        dashie_y = y - dashie.top
+        
+        if payload["color"] != dashie.img[dashie_y][dashie_x]:
+            print("Discord!", payload)
+            discord_list[(x, y)] = dashie.img[dashie_y][dashie_x]
+
+        elif (x, y) in discord_list:
+            print("Pixel element harmonised", payload)
+            del discord_list[(x, y)]
+    return process
+
+def configure_app(discord_list):
+    agg = aggregator(discord_list)
+    ff = fine_filter(agg)
+    cf = coarse_filter(ff)
+    unpack = unpacker(cf)
+    jmp = websocket_utils.json_message_parser(unpack)
+    wsp = websocket_utils.websocket_message_processor(jmp)
+    wsl = websocket_utils.websocket_listener(websocket_utils.websocket_factory, wsp)
     while 1:
-       payload = ws.recv()
-
-       if payload == b'\x03\xe8':
-           print("server is overloaded. Quitting")
-           return
-       try:
-           payload = json.loads(payload)["payload"]
-       except:
-           print("json parse error", payload)
-           sleep(10)
-           continue
-
-       if "x" not in payload:
-          continue
-
-       real_x = payload["x"]
-       dashie_x = real_x - dashie.left
-
-       real_y = payload["y"]
-       dashie_y = real_y - dashie.top
-
-       if real_x >= dashie.left and real_x < dashie.right and \
-          real_y >=dashie.top and real_y < dashie.bottom:
-          if payload["color"] != dashie.img[dashie_y][dashie_x] and dashie.img[dashie_y][dashie_x] != -1:
-              print("Discord!", payload)
-              discord_list[(real_x, real_y)] = dashie.img[dashie_y][dashie_x]
-
-          elif (real_x, real_y) in discord_list:
-              print("Pixel element harmonised", payload)
-              del discord_list[(real_x, real_y)]
-              print(len(discord_list.keys()), "errors left to repair")
-
-
+        wsl.run()
 
 if __name__ == "__main__":
     freeze_support()
@@ -102,10 +118,14 @@ if __name__ == "__main__":
     if args.url is None:
         args.url = input("Enter WebSockets URL: ")
 
-    place = Place.Place(args.user, args.passwd, greedy=False)
 
     discord_list = Manager().dict()
-    p = Process(target=repaint, args=(discord_list,place,))
+    p = Process(target=configure_app, args=(discord_list,))
     p.start()
 
-    monitor_dashie(args.url)
+    place = Place.Place(args.user, args.passwd, greedy=False)
+    while 1:
+        repaint(discord_list, place)
+    
+    p.terminate()
+    
