@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
 import json
+import websocket
 
 class websocket_dummy:
     def recv(self):
         return '{"type":"place", "payload":{"x":770, "y":416, "color":0, "author":"tea-drinker"}}'
 
-def websocket_factory():
-    return websocket_dummy()
+def websocket_factory(from_location):
+    if type(from_location) == function:
+        url = from_location()
+    elif type(from_location) == str:
+        url = from_location
+
+    return websocket.create_connection(url)
 
 class websocket_listener:
     
