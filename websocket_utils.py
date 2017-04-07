@@ -2,18 +2,21 @@
 
 import json
 import websocket
+from time import sleep
 
 class websocket_dummy:
     def recv(self):
         return '{"type":"place", "payload":{"x":770, "y":416, "color":0, "author":"tea-drinker"}}'
 
 def websocket_factory(from_location):
-    if type(from_location) == function:
-        url = from_location()
-    elif type(from_location) == str:
-        url = from_location
+    def get():
+        if type(from_location) == str:
+            url = from_location
+        elif type(from_location) == function:
+            url = from_location()
 
-    return websocket.create_connection(url)
+        return websocket.create_connection(url)
+    return get
 
 class websocket_listener:
     
@@ -30,7 +33,7 @@ class websocket_listener:
         #todo: some exception handlers
 
 def websocket_message_processor(next_step_function):
-    def process(message):
+    def process(websocket, message):
         if type(message) == str:
             next_step_function(message)
         
@@ -44,10 +47,24 @@ def json_message_parser(next_step_function):
         next_step_function(data)
     return process
 
+class message_router:
+    def __init__(self, type_field):
+        super(message_router, self).__init__()
+        self.type_field = type_field
+        self.routes = {}
+
+    def add_route(self, value, next_step):
+        self.routes[value] = next_step
+
+    def process(self, message):
+        if message[self.type_field] in self.routes:
+            self.routes[message[self.type_field]](message)
+
 if __name__ ==  '__main__':
     #dump debug data from websocket
     jmp = json_message_parser(print)
     wsp = websocket_message_processor(jmp)
-    wsl = websocket_listener(websocket_factory, wsp)
-    
-    wsl.run()
+    wsl = websocket.WebSocketApp('ws://pxls.space/ws', on_message = wsp)
+
+    wsl.run_forever()
+
